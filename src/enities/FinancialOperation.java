@@ -46,4 +46,7 @@ public abstract class FinancialOperation {
     public void setCategory(Category category){
         this.category = Objects.requireNonNull(category, "Категория не может быть null");
     }
+    public boolean isInDateRange(LocalDate startDate, LocalDate endDate) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
 }

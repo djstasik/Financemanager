@@ -1,0 +1,58 @@
+[
+  {
+    "expenseType": "FIXED",
+    "id": "EXP_1765130079242_3",
+    "name": "Аренда квартиры",
+    "amount": -15000.0,
+    "date": "2025-11-27",
+    "description": "Ежемесячная аренда",
+    "category": {
+      "id": "3",
+      "name": "Жилье",
+      "description": "Аренда, коммуналка",
+      "colorCode": "#45B7D1"
+    }
+  },
+  {
+    "expenseType": "FIXED",
+    "id": "EXP_1765130079242_2",
+    "name": "Бензин",
+    "amount": -2500.0,
+    "date": "2025-12-06",
+    "description": "Заправка автомобиля",
+    "category": {
+      "id": "2",
+      "name": "Транспорт",
+      "description": "Транспортные расходы",
+      "colorCode": "#4ECDC4"
+    }
+  },
+  {
+    "expenseType": "FIXED",
+    "id": "EXP_1114f872",
+    "name": "На сладкое для девушки",
+    "amount": -400000.0,
+    "date": "2025-12-07",
+    "description": "",
+    "category": {
+      "id": "1",
+      "name": "Еда",
+      "description": "",
+      "colorCode": "#000000"
+    }
+  },
+  {
+    "expenseType": "VARIABLE",
+    "id": "EXP_1765130079225_1",
+    "name": "Продукты на неделю",
+    "amount": -3500.0,
+    "date": "2025-12-04",
+    "description": "Покупки в супермаркете",
+    "category": {
+      "id": "1",
+      "name": "Еда",
+      "description": "Продукты питания",
+      "colorCode": "#FF6B6B"
+    }
+  }
+]

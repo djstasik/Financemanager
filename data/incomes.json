@@ -1,0 +1,44 @@
+[
+  {
+    "incomeSource": "SALARY",
+    "id": "INC_1765130079242_1",
+    "name": "Зарплата",
+    "amount": 50000.0,
+    "date": "2025-12-02",
+    "description": "Основная работа",
+    "category": {
+      "id": "6",
+      "name": "Зарплата",
+      "description": "Основная работа",
+      "colorCode": "#55EFC4"
+    }
+  },
+  {
+    "incomeSource": "FREELANCE",
+    "id": "INC_1765130079242_2",
+    "name": "Фриланс проект",
+    "amount": 20000.0,
+    "date": "2025-12-05",
+    "description": "Веб-разработка сайта",
+    "category": {
+      "id": "8",
+      "name": "Фриланс",
+      "description": "Внештатная работа",
+      "colorCode": "#A29BFE"
+    }
+  },
+  {
+    "incomeSource": "BUSINESS",
+    "id": "INC_35837acb",
+    "name": "Массажка",
+    "amount": 590000.0,
+    "date": "2025-12-07",
+    "description": "Yep",
+    "category": {
+      "id": "9",
+      "name": "Бизнес",
+      "description": "",
+      "colorCode": "#000000"
+    }
+  }
+]

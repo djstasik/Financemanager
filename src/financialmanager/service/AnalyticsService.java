@@ -94,7 +94,6 @@ public class AnalyticsService {
                 .orElse("Нет данных");
     }
 
-    // Этот метод остаётся для внутреннего использования, но убираем его публичность из UI
     public String getFinancialHealth() {
         LocalDate now = LocalDate.now();
         LocalDate startOfMonth = now.withDayOfMonth(1);

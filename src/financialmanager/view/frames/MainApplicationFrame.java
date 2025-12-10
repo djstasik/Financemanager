@@ -3,6 +3,7 @@ package financialmanager.view.frames;
 import financialmanager.controller.AnalyticsController;
 import financialmanager.controller.ExpenseController;
 import financialmanager.controller.IncomeController;
+import financialmanager.model.managers.CreditCardManager;
 import financialmanager.persistence.JsonDataManager;
 import financialmanager.view.components.AnalyticsPanel;
 import financialmanager.view.components.CreditCardPanel;
@@ -18,27 +19,31 @@ public class MainApplicationFrame extends JFrame {
     public MainApplicationFrame(ExpenseController expenseController,
                                 IncomeController incomeController,
                                 AnalyticsController analyticsController,
-                                JsonDataManager dataManager) {
-        initializeUI(expenseController, incomeController, analyticsController, dataManager);
+                                JsonDataManager dataManager,
+                                CreditCardManager cardManager) {
+        initializeUI(expenseController, incomeController, analyticsController, dataManager, cardManager);
     }
 
     private void initializeUI(ExpenseController expenseController,
                               IncomeController incomeController,
                               AnalyticsController analyticsController,
-                              JsonDataManager dataManager) {
-        setTitle("Финансовый менеджер (JSON Persistence)");
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                              JsonDataManager dataManager,
+                              CreditCardManager cardManager) {
+        setTitle("Финансовый менеджер");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 700);
         setLocationRelativeTo(null);
 
-        ExpensePanel expensePanel = new ExpensePanel(expenseController);
-        IncomePanel incomePanel = new IncomePanel(incomeController);
+        // Создаем панели с передачей менеджера карт
+        ExpensePanel expensePanel = new ExpensePanel(expenseController, cardManager);
+        IncomePanel incomePanel = new IncomePanel(incomeController, cardManager);
         AnalyticsPanel analyticsPanel = new AnalyticsPanel(analyticsController,
                 expenseController,
                 incomeController,
                 dataManager);
-        CreditCardPanel creditCardPanel = new CreditCardPanel();
+        CreditCardPanel creditCardPanel = new CreditCardPanel(expenseController, incomeController, cardManager);
 
+        // Создаем вкладки
         tabbedPane = new JTabbedPane();
         tabbedPane.addTab("📊 Расходы", expensePanel);
         tabbedPane.addTab("💰 Доходы", incomePanel);
@@ -47,7 +52,10 @@ public class MainApplicationFrame extends JFrame {
 
         add(tabbedPane, BorderLayout.CENTER);
 
+        // Создаем меню
         createMenuBar();
+
+        // Создаем статусную строку
         createStatusBar();
 
         setVisible(true);
@@ -65,11 +73,10 @@ public class MainApplicationFrame extends JFrame {
         exportIncomesItem.addActionListener(e -> showExportInfo("доходов"));
         exitItem.addActionListener(e -> {
             int result = JOptionPane.showConfirmDialog(this,
-                    "Сохранить данные перед выходом?\n(Данные всегда сохраняются автоматически)",
-                    "Выход", JOptionPane.YES_NO_CANCEL_OPTION);
+                    "Выйти из программы?",
+                    "Выход", JOptionPane.YES_NO_OPTION);
 
-            if (result == JOptionPane.YES_OPTION || result == JOptionPane.NO_OPTION) {
-                dispose();
+            if (result == JOptionPane.YES_OPTION) {
                 System.exit(0);
             }
         });
@@ -101,7 +108,7 @@ public class MainApplicationFrame extends JFrame {
         JPanel statusBar = new JPanel(new BorderLayout());
         statusBar.setBorder(BorderFactory.createEtchedBorder());
 
-        JLabel statusLabel = new JLabel(" Данные сохраняются автоматически в JSON");
+        JLabel statusLabel = new JLabel(" Данные сохраняются автоматически");
         JLabel timeLabel = new JLabel(new java.util.Date().toString());
 
         statusBar.add(statusLabel, BorderLayout.WEST);
@@ -109,6 +116,7 @@ public class MainApplicationFrame extends JFrame {
 
         add(statusBar, BorderLayout.SOUTH);
 
+        // Таймер для обновления времени
         Timer timer = new Timer(1000, e -> {
             timeLabel.setText(new java.util.Date().toString());
         });
@@ -122,10 +130,9 @@ public class MainApplicationFrame extends JFrame {
                 "Особенности:\n" +
                 "• Управление расходами и доходами\n" +
                 "• Аналитика и отчеты\n" +
-                "• Автосохранение в JSON формате\n" +
-                "• Категории и типы операций\n" +
-                "• Управление кредитными картами\n\n" +
-                "Данные сохраняются в папке 'data/'";
+                "• Управление кредитными картами\n" +
+                "• Интеграция карт с операциями\n\n" +
+                "Данные сохраняются автоматически";
         JOptionPane.showMessageDialog(this, message, "О программе", JOptionPane.INFORMATION_MESSAGE);
     }
 }

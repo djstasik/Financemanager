@@ -1,6 +1,11 @@
 package financialmanager.view.components;
 
+import financialmanager.controller.ExpenseController;
+import financialmanager.controller.IncomeController;
 import financialmanager.model.entities.CreditCard;
+import financialmanager.model.entities.Expense;
+import financialmanager.model.entities.Income;
+import financialmanager.model.managers.CreditCardManager;
 import financialmanager.model.enums.TransactionType;
 import financialmanager.util.DateUtils;
 import financialmanager.util.IDGenerator;
@@ -9,22 +14,28 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CreditCardPanel extends JPanel {
-    private final List<CreditCard> creditCards = new ArrayList<>();
+    private final CreditCardManager cardManager;
+    private final ExpenseController expenseController;
+    private final IncomeController incomeController;
     private final CreditCardTableModel tableModel;
     private final JTable table;
     private JLabel totalCardsLabel;
     private JLabel totalBalanceLabel;
     private JLabel totalCreditLabel;
 
-    public CreditCardPanel() {
-        setLayout(new BorderLayout(10, 10));
+    public CreditCardPanel(ExpenseController expenseController,
+                           IncomeController incomeController,
+                           CreditCardManager cardManager) {
+        this.expenseController = expenseController;
+        this.incomeController = incomeController;
+        this.cardManager = cardManager;
 
-        // Инициализация примерами
-        initializeSampleCards();
+        setLayout(new BorderLayout(10, 10));
 
         // Верхняя панель с информацией
         JPanel topPanel = createTopPanel();
@@ -44,29 +55,14 @@ public class CreditCardPanel extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
 
         updateInfo();
-    }
 
-    private void initializeSampleCards() {
-        // Добавляем примеры карт для демонстрации
-        creditCards.add(new CreditCard(
-                IDGenerator.generateId("CARD"),
-                "**** 1234",
-                "Иван Иванов",
-                50000.0,
-                LocalDate.now().plusYears(3)
-        ));
-
-        creditCards.add(new CreditCard(
-                IDGenerator.generateId("CARD"),
-                "**** 5678",
-                "Иван Иванов",
-                100000.0,
-                LocalDate.now().plusYears(2)
-        ));
-
-        // Добавляем немного задолженности для примера
-        creditCards.get(0).setCurrentBalance(15000.0);
-        creditCards.get(1).setCurrentBalance(25000.0);
+        // Добавляем слушатель изменений карт
+        cardManager.addListener(cards -> {
+            SwingUtilities.invokeLater(() -> {
+                tableModel.fireTableDataChanged();
+                updateInfo();
+            });
+        });
     }
 
     private JPanel createTopPanel() {
@@ -101,6 +97,7 @@ public class CreditCardPanel extends JPanel {
         JButton deleteButton = new JButton("Удалить");
         JButton depositButton = new JButton("Пополнить");
         JButton withdrawButton = new JButton("Снять средства");
+        JButton operationsButton = new JButton("Операции по карте");
         JButton reportButton = new JButton("Отчет");
 
         addButton.addActionListener(e -> addCard());
@@ -108,6 +105,7 @@ public class CreditCardPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteCard());
         depositButton.addActionListener(e -> processTransaction(TransactionType.DEPOSIT));
         withdrawButton.addActionListener(e -> processTransaction(TransactionType.WITHDRAWAL));
+        operationsButton.addActionListener(e -> showCardOperations());
         reportButton.addActionListener(e -> showReport());
 
         panel.add(addButton);
@@ -115,21 +113,23 @@ public class CreditCardPanel extends JPanel {
         panel.add(deleteButton);
         panel.add(depositButton);
         panel.add(withdrawButton);
+        panel.add(operationsButton);
         panel.add(reportButton);
 
         return panel;
     }
 
     private void addCard() {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Добавить кредитную карту", true);
-        dialog.setSize(400, 350);
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                "Добавить кредитную карту", true);
+        dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
-        JPanel fieldPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel fieldPanel = new JPanel(new GridLayout(4, 2, 10, 10));
         fieldPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        fieldPanel.add(new JLabel("Номер карты:"));
+        fieldPanel.add(new JLabel("Номер карты (последние 4 цифры):"));
         JTextField cardNumberField = new JTextField();
         fieldPanel.add(cardNumberField);
 
@@ -138,20 +138,16 @@ public class CreditCardPanel extends JPanel {
         fieldPanel.add(holderField);
 
         fieldPanel.add(new JLabel("Кредитный лимит:"));
-        JTextField limitField = new JTextField();
+        JTextField limitField = new JTextField("50000");
         fieldPanel.add(limitField);
 
-        fieldPanel.add(new JLabel("Срок действия (мм/гг):"));
-        JTextField expiryField = new JTextField();
-        fieldPanel.add(expiryField);
-
-        fieldPanel.add(new JLabel("Начальный баланс:"));
-        JTextField balanceField = new JTextField("0");
-        fieldPanel.add(balanceField);
+        fieldPanel.add(new JLabel("Год окончания:"));
+        JTextField yearField = new JTextField(String.valueOf(LocalDate.now().getYear() + 3));
+        fieldPanel.add(yearField);
 
         dialog.add(fieldPanel, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonPanel = new JPanel();
         JButton saveButton = new JButton("Сохранить");
         JButton cancelButton = new JButton("Отмена");
 
@@ -160,38 +156,41 @@ public class CreditCardPanel extends JPanel {
                 String cardNumber = cardNumberField.getText().trim();
                 String holderName = holderField.getText().trim();
                 double creditLimit = Double.parseDouble(limitField.getText().trim());
-                String expiry = expiryField.getText().trim();
-                double initialBalance = Double.parseDouble(balanceField.getText().trim());
+                int year = Integer.parseInt(yearField.getText().trim());
 
                 if (cardNumber.isEmpty() || holderName.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Заполните все обязательные поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog,
+                            "Заполните все поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // Парсим дату MM/YY
-                String[] expiryParts = expiry.split("/");
-                int month = Integer.parseInt(expiryParts[0]);
-                int year = 2000 + Integer.parseInt(expiryParts[1]); // Преобразуем YY в YYYY
-                LocalDate expiryDate = LocalDate.of(year, month, 1).withDayOfMonth(1);
+                // Фиксируем месяц = 12 (декабрь), день = 31
+                LocalDate expiryDate = LocalDate.of(year, 12, 31);
 
                 CreditCard card = new CreditCard(
                         IDGenerator.generateId("CARD"),
-                        cardNumber,
+                        "**** " + cardNumber,
                         holderName,
                         creditLimit,
                         expiryDate
                 );
-                card.setCurrentBalance(initialBalance);
 
-                creditCards.add(card);
-                tableModel.fireTableDataChanged();
-                updateInfo();
+                cardManager.addCard(card);
                 dialog.dispose();
 
-                JOptionPane.showMessageDialog(this, "Кредитная карта добавлена", "Успех", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Карта добавлена:\n" +
+                                "Номер: " + card.getCardNumber() + "\n" +
+                                "Лимит: " + card.getCreditLimit() + " ₽\n" +
+                                "Доступно: " + card.getAvailableCredit() + " ₽",
+                        "Успех", JOptionPane.INFORMATION_MESSAGE);
 
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Некорректные числовые значения", "Ошибка", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Ошибка: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog,
+                        "Ошибка: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -211,7 +210,7 @@ public class CreditCardPanel extends JPanel {
             return;
         }
 
-        CreditCard card = creditCards.get(selectedRow);
+        CreditCard card = cardManager.getAllCards().get(selectedRow);
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Редактировать карту", true);
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(this);
@@ -226,7 +225,7 @@ public class CreditCardPanel extends JPanel {
         fieldPanel.add(cardNumberField);
 
         fieldPanel.add(new JLabel("Держатель:"));
-        JTextField holderField = new JTextField(card.getHolderName());
+        JTextField holderField = new JTextField(card.getOwnerName());
         fieldPanel.add(holderField);
 
         fieldPanel.add(new JLabel("Кредитный лимит:"));
@@ -245,16 +244,17 @@ public class CreditCardPanel extends JPanel {
 
         saveButton.addActionListener(e -> {
             try {
-                card.setHolderName(holderField.getText().trim());
+                card.setOwnerName(holderField.getText().trim());
                 card.setCreditLimit(Double.parseDouble(limitField.getText().trim()));
                 card.setCurrentBalance(Double.parseDouble(balanceField.getText().trim()));
 
-                tableModel.fireTableDataChanged();
-                updateInfo();
+                cardManager.updateCard(card);
                 dialog.dispose();
 
                 JOptionPane.showMessageDialog(this, "Карта обновлена", "Успех", JOptionPane.INFORMATION_MESSAGE);
 
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Некорректный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog, "Ошибка: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
@@ -276,17 +276,20 @@ public class CreditCardPanel extends JPanel {
             return;
         }
 
+        CreditCard card = cardManager.getAllCards().get(selectedRow);
+
         int answer = JOptionPane.showConfirmDialog(
                 this,
-                "Вы уверены, что хотите удалить выбранную карту?",
+                "Вы уверены, что хотите удалить выбранную карту?\n" +
+                        "Карта: " + card.getCardNumber() + "\n" +
+                        "Держатель: " + card.getOwnerName() + "\n" +
+                        "Все операции по этой карте останутся в истории.",
                 "Подтверждение удаления",
                 JOptionPane.YES_NO_OPTION
         );
 
         if (answer == JOptionPane.YES_OPTION) {
-            creditCards.remove(selectedRow);
-            tableModel.fireTableDataChanged();
-            updateInfo();
+            cardManager.removeCard(card);
             JOptionPane.showMessageDialog(this, "Карта удалена", "Успех", JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -298,7 +301,7 @@ public class CreditCardPanel extends JPanel {
             return;
         }
 
-        CreditCard card = creditCards.get(selectedRow);
+        CreditCard card = cardManager.getAllCards().get(selectedRow);
 
         String amountStr = JOptionPane.showInputDialog(
                 this,
@@ -327,8 +330,7 @@ public class CreditCardPanel extends JPanel {
                             "Успех", JOptionPane.INFORMATION_MESSAGE);
                 }
 
-                tableModel.fireTableDataChanged();
-                updateInfo();
+                cardManager.updateCard(card);
 
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(this, "Ошибка: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -338,36 +340,106 @@ public class CreditCardPanel extends JPanel {
         }
     }
 
+    private void showCardOperations() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Выберите карту для просмотра операций",
+                    "Внимание", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        CreditCard card = cardManager.getAllCards().get(selectedRow);
+
+        // Получаем все операции
+        List<Expense> allExpenses = expenseController.getAll();
+        List<Income> allIncomes = incomeController.getAll();
+
+        // Фильтруем операции по ID карты
+        List<Expense> cardExpenses = allExpenses.stream()
+                .filter(e -> e.hasCreditCard() && e.getCreditCardId().equals(card.getId()))
+                .sorted((a, b) -> b.getDate().compareTo(a.getDate()))  // Сначала новые
+                .toList();
+
+        List<Income> cardIncomes = allIncomes.stream()
+                .filter(i -> i.hasCreditCard() && i.getCreditCardId().equals(card.getId()))
+                .sorted((a, b) -> b.getDate().compareTo(a.getDate()))
+                .toList();
+
+        // Строим отчет
+        StringBuilder report = new StringBuilder();
+        report.append("=== ОПЕРАЦИИ ПО КАРТЕ ===\n\n");
+        report.append("Карта: ").append(card.getCardNumber()).append("\n");
+        report.append("Владелец: ").append(card.getOwnerName()).append("\n");
+        report.append("Лимит: ").append(String.format("%.2f ₽", card.getCreditLimit())).append("\n");
+        report.append("Использовано: ").append(String.format("%.2f ₽", card.getCurrentBalance())).append("\n");
+        report.append("Доступно: ").append(String.format("%.2f ₽", card.getAvailableCredit())).append("\n\n");
+
+        report.append("=== РАСХОДЫ (").append(cardExpenses.size()).append(") ===\n");
+        double totalExpenses = 0;
+        for (Expense exp : cardExpenses) {
+            String dateStr = exp.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            report.append(String.format("%s: %s - %.2f ₽\n",
+                    dateStr, exp.getName(), Math.abs(exp.getAmount())));
+            totalExpenses += Math.abs(exp.getAmount());
+        }
+        if (cardExpenses.isEmpty()) {
+            report.append("Нет операций\n");
+        }
+        report.append("Всего расходов: ").append(String.format("%.2f ₽", totalExpenses)).append("\n\n");
+
+        report.append("=== ДОХОДЫ (").append(cardIncomes.size()).append(") ===\n");
+        double totalIncomes = 0;
+        for (Income inc : cardIncomes) {
+            String dateStr = inc.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            report.append(String.format("%s: %s - %.2f ₽\n",
+                    dateStr, inc.getName(), inc.getAmount()));
+            totalIncomes += inc.getAmount();
+        }
+        if (cardIncomes.isEmpty()) {
+            report.append("Нет операций\n");
+        }
+        report.append("Всего доходов: ").append(String.format("%.2f ₽", totalIncomes)).append("\n\n");
+
+        report.append("=== СВОДКА ===\n");
+        report.append("Разница (доходы - расходы): ").append(String.format("%.2f ₽", totalIncomes - totalExpenses)).append("\n");
+        report.append("Текущий баланс карты: ").append(String.format("%.2f ₽", card.getCurrentBalance())).append("\n");
+
+        // Показываем в диалоге
+        JTextArea textArea = new JTextArea(report.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(600, 400));
+
+        JOptionPane.showMessageDialog(this, scrollPane,
+                "Операции по карте " + card.getCardNumber(),
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private void showReport() {
-        double totalDebt = creditCards.stream()
-                .mapToDouble(CreditCard::getCurrentBalance)
-                .sum();
-
-        double totalCredit = creditCards.stream()
-                .mapToDouble(CreditCard::getCreditLimit)
-                .sum();
-
-        double totalAvailable = creditCards.stream()
-                .mapToDouble(CreditCard::getAvailableCredit)
-                .sum();
+        double totalDebt = cardManager.getTotalDebt();
+        double totalCredit = cardManager.getTotalCreditLimit();
+        double totalAvailable = cardManager.getTotalAvailableCredit();
 
         double utilizationRate = totalCredit > 0 ? (totalDebt / totalCredit) * 100 : 0;
 
         StringBuilder report = new StringBuilder();
         report.append("=== ОТЧЕТ ПО КРЕДИТНЫМ КАРТАМ ===\n\n");
-        report.append(String.format("Всего карт: %d\n", creditCards.size()));
+        report.append(String.format("Всего карт: %d\n", cardManager.size()));
         report.append(String.format("Общая задолженность: %.2f ₽\n", totalDebt));
         report.append(String.format("Общий кредитный лимит: %.2f ₽\n", totalCredit));
         report.append(String.format("Общий доступный кредит: %.2f ₽\n", totalAvailable));
         report.append(String.format("Коэффициент использования: %.1f%%\n\n", utilizationRate));
 
         report.append("Информация по картам:\n");
-        for (int i = 0; i < creditCards.size(); i++) {
-            CreditCard card = creditCards.get(i);
+        List<CreditCard> cards = cardManager.getAllCards();
+        for (int i = 0; i < cards.size(); i++) {
+            CreditCard card = cards.get(i);
             double cardUtilization = (card.getCurrentBalance() / card.getCreditLimit()) * 100;
 
             report.append(String.format("%d. %s\n", i + 1, card.getCardNumber()));
-            report.append(String.format("   Держатель: %s\n", card.getHolderName()));
+            report.append(String.format("   Держатель: %s\n", card.getOwnerName()));
             report.append(String.format("   Лимит: %.2f ₽ | Задолженность: %.2f ₽ | Доступно: %.2f ₽\n",
                     card.getCreditLimit(), card.getCurrentBalance(), card.getAvailableCredit()));
             report.append(String.format("   Использование: %.1f%% | Срок действия: %s\n\n",
@@ -386,13 +458,9 @@ public class CreditCardPanel extends JPanel {
     }
 
     private void updateInfo() {
-        int cardCount = creditCards.size();
-        double totalBalance = creditCards.stream()
-                .mapToDouble(CreditCard::getCurrentBalance)
-                .sum();
-        double totalAvailable = creditCards.stream()
-                .mapToDouble(CreditCard::getAvailableCredit)
-                .sum();
+        int cardCount = cardManager.size();
+        double totalBalance = cardManager.getTotalDebt();
+        double totalAvailable = cardManager.getTotalAvailableCredit();
 
         totalCardsLabel.setText(String.format("Карт: %d", cardCount));
         totalBalanceLabel.setText(String.format("Задолженность: %.2f ₽", totalBalance));
@@ -407,7 +475,7 @@ public class CreditCardPanel extends JPanel {
 
         @Override
         public int getRowCount() {
-            return creditCards.size();
+            return cardManager.size();
         }
 
         @Override
@@ -422,12 +490,13 @@ public class CreditCardPanel extends JPanel {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            CreditCard card = creditCards.get(rowIndex);
-            double utilization = (card.getCurrentBalance() / card.getCreditLimit()) * 100;
+            CreditCard card = cardManager.getAllCards().get(rowIndex);
+            double utilization = card.getCreditLimit() > 0 ?
+                    (card.getCurrentBalance() / card.getCreditLimit()) * 100 : 0;
 
             return switch (columnIndex) {
                 case 0 -> card.getCardNumber();
-                case 1 -> card.getHolderName();
+                case 1 -> card.getOwnerName();
                 case 2 -> String.format("%.2f ₽", card.getCreditLimit());
                 case 3 -> String.format("%.2f ₽", card.getCurrentBalance());
                 case 4 -> String.format("%.2f ₽", card.getAvailableCredit());

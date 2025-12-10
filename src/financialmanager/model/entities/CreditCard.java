@@ -6,34 +6,34 @@ import java.util.Objects;
 public class CreditCard {
     private String id;
     private String cardNumber;
-    private String holderName;
+    private String ownerName;  // Имя владельца как строка (упрощенно)
     private double creditLimit;
     private double currentBalance;
     private LocalDate expiryDate;
 
-    public CreditCard(String id, String cardNumber, String holderName,
+    public CreditCard(String id, String cardNumber, String ownerName,
                       double creditLimit, LocalDate expiryDate) {
         this.id = Objects.requireNonNull(id, "ID не может быть null");
         this.cardNumber = Objects.requireNonNull(cardNumber, "Номер карты не может быть null");
-        this.holderName = Objects.requireNonNull(holderName, "Имя держателя не может быть null");
+        this.ownerName = Objects.requireNonNull(ownerName, "Имя владельца не может быть null");
         this.creditLimit = creditLimit;
         this.currentBalance = 0;
         this.expiryDate = Objects.requireNonNull(expiryDate, "Срок действия не может быть null");
     }
 
-    // Геттеры и сеттеры
+    // Геттеры
     public String getId() { return id; }
     public String getCardNumber() { return cardNumber; }
-    public String getHolderName() { return holderName; }
+    public String getOwnerName() { return ownerName; }
     public double getCreditLimit() { return creditLimit; }
     public double getCurrentBalance() { return currentBalance; }
     public LocalDate getExpiryDate() { return expiryDate; }
     public double getAvailableCredit() { return creditLimit - currentBalance; }
 
-    public void setHolderName(String holderName) {
-        this.holderName = Objects.requireNonNull(holderName, "Имя держателя не может быть null");
+    // Сеттеры
+    public void setOwnerName(String ownerName) {
+        this.ownerName = Objects.requireNonNull(ownerName, "Имя владельца не может быть null");
     }
-
     public void setCreditLimit(double creditLimit) { this.creditLimit = creditLimit; }
     public void setCurrentBalance(double currentBalance) { this.currentBalance = currentBalance; }
     public void setExpiryDate(LocalDate expiryDate) {
@@ -44,7 +44,7 @@ public class CreditCard {
         if (amount <= 0) {
             throw new IllegalArgumentException("Сумма пополнения должна быть положительной");
         }
-        currentBalance = Math.max(0, currentBalance - amount);
+        currentBalance = Math.max(0, currentBalance - amount); // Уменьшаем задолженность
     }
 
     public void withdraw(double amount) {
@@ -52,14 +52,20 @@ public class CreditCard {
             throw new IllegalArgumentException("Сумма снятия должна быть положительной");
         }
         if (amount > getAvailableCredit()) {
-            throw new IllegalArgumentException("Недостаточно доступного кредита");
+            String message = String.format(
+                    "Недостаточно кредита!\n" +
+                            "Попытка снять: %.2f ₽\n" +
+                            "Доступно: %.2f ₽\n" +
+                            "Лимит: %.2f ₽\n" +
+                            "Текущая задолженность: %.2f ₽",
+                    amount, getAvailableCredit(), creditLimit, currentBalance);
+            throw new IllegalArgumentException(message);
         }
         currentBalance += amount;
     }
 
     @Override
     public String toString() {
-        return String.format("CreditCard{id='%s', holder='%s', limit=%.2f, balance=%.2f}",
-                id, holderName, creditLimit, currentBalance);
+        return String.format("%s (%s)", cardNumber, ownerName);
     }
 }

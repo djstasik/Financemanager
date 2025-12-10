@@ -1,16 +1,15 @@
 package financialmanager.model.enums;
 
-public enum IncomeSource {
-    SALARY("Зарплата"),
-    INVESTMENT("Инвестиции"),
-    FREELANCE("Фриланс"),
-    BUSINESS("Бизнес"),
-    GIFTS("Подарки"),
+public enum PaymentMethod {
+    CASH("Наличные"),
+    DEBIT_CARD("Дебетовая карта"),
+    CREDIT_CARD("Кредитная карта"),
+    TRANSFER("Перевод"),
     OTHER("Другое");
 
     private final String displayName;
 
-    IncomeSource(String displayName) {
+    PaymentMethod(String displayName) {
         this.displayName = displayName;
     }
 
@@ -20,6 +19,6 @@ public enum IncomeSource {
 
     @Override
     public String toString() {
-        return getDisplayName();
+        return displayName;
     }
 }

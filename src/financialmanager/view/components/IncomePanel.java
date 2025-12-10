@@ -2,22 +2,26 @@ package financialmanager.view.components;
 
 import financialmanager.controller.IncomeController;
 import financialmanager.model.entities.Income;
+import financialmanager.model.managers.CreditCardManager;
 import financialmanager.model.enums.IncomeSource;
 
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public class IncomePanel extends JPanel {
     private final IncomeController controller;
+    private final CreditCardManager cardManager;
     private final IncomeTableModel tableModel;
     private final JTable table;
-    private JLabel balanceLabel; // Убрали final
+    private JLabel balanceLabel;
 
-    public IncomePanel(IncomeController controller) {
+    public IncomePanel(IncomeController controller, CreditCardManager cardManager) {
         this.controller = controller;
+        this.cardManager = cardManager;
 
         setLayout(new BorderLayout(10, 10));
 
@@ -94,6 +98,7 @@ public class IncomePanel extends JPanel {
         IncomeDialog dialog = new IncomeDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this),
                 controller,
+                cardManager,
                 "Добавить новый доход"
         );
         dialog.setVisible(true);
@@ -116,6 +121,7 @@ public class IncomePanel extends JPanel {
         IncomeDialog dialog = new IncomeDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this),
                 controller,
+                cardManager,
                 income,
                 "Редактировать доход"
         );
@@ -145,6 +151,16 @@ public class IncomePanel extends JPanel {
             Income income = tableModel.getOperationAt(modelRow);
 
             try {
+                // Если доход привязан к карте, возвращаем средства
+                if (income.hasCreditCard()) {
+                    String cardId = income.getCreditCardId();
+                    var card = cardManager.getCardById(cardId);
+                    if (card != null) {
+                        card.withdraw(income.getAmount()); // Снимаем доход с карты
+                        cardManager.updateCard(card);
+                    }
+                }
+
                 controller.delete(income.getId());
                 tableModel.removeOperation(modelRow);
                 updateBalance();

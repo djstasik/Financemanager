@@ -16,7 +16,13 @@ public class Expense extends FinancialOperation {
 
     public Expense(String id, String name, double amount, LocalDate date,
                    String description, Category category, ExpenseType expenseType) {
-        super(id, name, Math.abs(amount) * -1, date, description, category);
+        super(id, name, Math.abs(amount) * -1, date, description, category, null);
+        this.expenseType = Objects.requireNonNull(expenseType, "Тип расхода не может быть null");
+    }
+
+    public Expense(String id, String name, double amount, LocalDate date,
+                   String description, Category category, ExpenseType expenseType, String creditCardId) {
+        super(id, name, Math.abs(amount) * -1, date, description, category, creditCardId);
         this.expenseType = Objects.requireNonNull(expenseType, "Тип расхода не может быть null");
     }
 
@@ -33,7 +39,6 @@ public class Expense extends FinancialOperation {
     }
 
     public ExpenseType getExpenseType() { return expenseType; }
-
     public void setExpenseType(ExpenseType expenseType) {
         this.expenseType = Objects.requireNonNull(expenseType, "Тип расхода не может быть null");
     }
@@ -44,7 +49,8 @@ public class Expense extends FinancialOperation {
 
     @Override
     public String toString() {
-        return String.format("Expense{id='%s', name='%s', amount=%.2f, type=%s}",
-                getId(), getName(), getExpenseAmount(), expenseType);
+        return String.format("Expense{id='%s', name='%s', amount=%.2f, type=%s%s}",
+                getId(), getName(), getExpenseAmount(), expenseType,
+                hasCreditCard() ? ", card=" + getCreditCardId() : "");
     }
 }

@@ -16,6 +16,6 @@ public enum TransactionType {
 
     @Override
     public String toString() {
-        return displayName;
+        return getDisplayName();
     }
 }

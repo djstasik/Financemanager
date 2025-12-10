@@ -4,9 +4,10 @@ import financialmanager.model.entities.Income;
 
 import java.time.format.DateTimeFormatter;
 
+
 public class IncomeTableModel extends FinancialTableModel<Income> {
     private static final String[] COLUMNS = {
-            "ID", "Название", "Сумма", "Дата", "Источник", "Категория", "Описание"
+            "ID", "Название", "Сумма", "Дата", "Источник", "Категория", "Карта", "Описание"
     };
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -26,7 +27,8 @@ public class IncomeTableModel extends FinancialTableModel<Income> {
             case 3 -> income.getDate().format(dateFormatter);
             case 4 -> income.getIncomeSource().getDisplayName();
             case 5 -> income.getCategory().getName();
-            case 6 -> income.getDescription();
+            case 6 -> income.hasCreditCard() ? "💳" : "💵";  // Иконка карты или наличных
+            case 7 -> income.getDescription();
             default -> "";
         };
     }

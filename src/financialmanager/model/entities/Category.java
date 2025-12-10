@@ -53,6 +53,6 @@ public class Category {
 
     @Override
     public String toString() {
-        return String.format("Category{id='%s', name='%s'}", id, name);
+        return String.format("Category{id='%s', name='%s'}", getId(), getName());
     }
 }

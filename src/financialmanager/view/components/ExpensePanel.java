@@ -2,22 +2,26 @@ package financialmanager.view.components;
 
 import financialmanager.controller.ExpenseController;
 import financialmanager.model.entities.Expense;
+import financialmanager.model.managers.CreditCardManager;
 import financialmanager.model.enums.ExpenseType;
 
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public class ExpensePanel extends JPanel {
     private final ExpenseController controller;
+    private final CreditCardManager cardManager;
     private final ExpenseTableModel tableModel;
     private final JTable table;
-    private JLabel balanceLabel; // Убрали final
+    private JLabel balanceLabel;
 
-    public ExpensePanel(ExpenseController controller) {
+    public ExpensePanel(ExpenseController controller, CreditCardManager cardManager) {
         this.controller = controller;
+        this.cardManager = cardManager;
 
         setLayout(new BorderLayout(10, 10));
 
@@ -94,6 +98,7 @@ public class ExpensePanel extends JPanel {
         ExpenseDialog dialog = new ExpenseDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this),
                 controller,
+                cardManager,
                 "Добавить новый расход"
         );
         dialog.setVisible(true);
@@ -116,6 +121,7 @@ public class ExpensePanel extends JPanel {
         ExpenseDialog dialog = new ExpenseDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this),
                 controller,
+                cardManager,
                 expense,
                 "Редактировать расход"
         );
@@ -145,6 +151,16 @@ public class ExpensePanel extends JPanel {
             Expense expense = tableModel.getOperationAt(modelRow);
 
             try {
+                // Если расход привязан к карте, возвращаем средства
+                if (expense.hasCreditCard()) {
+                    String cardId = expense.getCreditCardId();
+                    var card = cardManager.getCardById(cardId);
+                    if (card != null) {
+                        card.deposit(Math.abs(expense.getAmount())); // Возвращаем средства на карту
+                        cardManager.updateCard(card);
+                    }
+                }
+
                 controller.delete(expense.getId());
                 tableModel.removeOperation(modelRow);
                 updateBalance();

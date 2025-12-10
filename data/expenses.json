@@ -1,6 +1,51 @@
 [
   {
     "expenseType": "FIXED",
+    "id": "EXP_f2c1c27c",
+    "name": "Еда на месяц",
+    "amount": -4000.0,
+    "date": "2025-12-10",
+    "description": "",
+    "category": {
+      "id": "1",
+      "name": "Еда",
+      "description": "",
+      "colorCode": "#000000"
+    },
+    "creditCardId": "CARD_2"
+  },
+  {
+    "expenseType": "FIXED",
+    "id": "EXP_38c04d09",
+    "name": "Сашке",
+    "amount": -2000.0,
+    "date": "2025-12-10",
+    "description": "",
+    "category": {
+      "id": "4",
+      "name": "Развлечения",
+      "description": "",
+      "colorCode": "#000000"
+    },
+    "creditCardId": "CARD_2"
+  },
+  {
+    "expenseType": "FIXED",
+    "id": "EXP_d01b563d",
+    "name": "Казик",
+    "amount": -25000.0,
+    "date": "2025-12-10",
+    "description": "",
+    "category": {
+      "id": "4",
+      "name": "Развлечения",
+      "description": "",
+      "colorCode": "#000000"
+    },
+    "creditCardId": "CARD_2"
+  },
+  {
+    "expenseType": "FIXED",
     "id": "EXP_1765130079242_3",
     "name": "Аренда квартиры",
     "amount": -15000.0,
@@ -25,34 +70,6 @@
       "name": "Транспорт",
       "description": "Транспортные расходы",
       "colorCode": "#4ECDC4"
-    }
-  },
-  {
-    "expenseType": "FIXED",
-    "id": "EXP_1114f872",
-    "name": "На сладкое для девушки",
-    "amount": -400000.0,
-    "date": "2025-12-07",
-    "description": "",
-    "category": {
-      "id": "1",
-      "name": "Еда",
-      "description": "",
-      "colorCode": "#000000"
-    }
-  },
-  {
-    "expenseType": "VARIABLE",
-    "id": "EXP_1765130079225_1",
-    "name": "Продукты на неделю",
-    "amount": -3500.0,
-    "date": "2025-12-04",
-    "description": "Покупки в супермаркете",
-    "category": {
-      "id": "1",
-      "name": "Еда",
-      "description": "Продукты питания",
-      "colorCode": "#FF6B6B"
     }
   }
 ]

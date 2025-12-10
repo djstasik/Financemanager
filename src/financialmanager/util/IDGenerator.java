@@ -5,7 +5,6 @@ import java.util.UUID;
 public class IDGenerator {
 
     private IDGenerator() {
-        // Приватный конструктор
     }
 
     public static String generateId() {

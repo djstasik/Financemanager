@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 public class ExpenseTableModel extends FinancialTableModel<Expense> {
     private static final String[] COLUMNS = {
-            "ID", "Название", "Сумма", "Дата", "Тип", "Категория", "Описание"
+            "ID", "Название", "Сумма", "Дата", "Тип", "Категория", "Карта", "Описание"
     };
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -26,7 +26,8 @@ public class ExpenseTableModel extends FinancialTableModel<Expense> {
             case 3 -> expense.getDate().format(dateFormatter);
             case 4 -> expense.getExpenseType().getDisplayName();
             case 5 -> expense.getCategory().getName();
-            case 6 -> expense.getDescription();
+            case 6 -> expense.hasCreditCard() ? "💳" : "💵";  // Иконка карты или наличных
+            case 7 -> expense.getDescription();
             default -> "";
         };
     }

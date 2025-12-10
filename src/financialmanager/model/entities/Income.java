@@ -16,7 +16,13 @@ public class Income extends FinancialOperation {
 
     public Income(String id, String name, double amount, LocalDate date,
                   String description, Category category, IncomeSource incomeSource) {
-        super(id, name, Math.abs(amount), date, description, category);
+        super(id, name, Math.abs(amount), date, description, category, null);
+        this.incomeSource = Objects.requireNonNull(incomeSource, "Источник дохода не может быть null");
+    }
+
+    public Income(String id, String name, double amount, LocalDate date,
+                  String description, Category category, IncomeSource incomeSource, String creditCardId) {
+        super(id, name, Math.abs(amount), date, description, category, creditCardId);
         this.incomeSource = Objects.requireNonNull(incomeSource, "Источник дохода не может быть null");
     }
 
@@ -33,14 +39,14 @@ public class Income extends FinancialOperation {
     }
 
     public IncomeSource getIncomeSource() { return incomeSource; }
-
     public void setIncomeSource(IncomeSource incomeSource) {
         this.incomeSource = Objects.requireNonNull(incomeSource, "Источник дохода не может быть null");
     }
 
     @Override
     public String toString() {
-        return String.format("Income{id='%s', name='%s', amount=%.2f, source=%s}",
-                getId(), getName(), getAmount(), incomeSource);
+        return String.format("Income{id='%s', name='%s', amount=%.2f, source=%s%s}",
+                getId(), getName(), getAmount(), incomeSource,
+                hasCreditCard() ? ", card=" + getCreditCardId() : "");
     }
 }

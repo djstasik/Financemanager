@@ -17,6 +17,7 @@ public enum ExpenseType {
 
     @Override
     public String toString() {
-        return displayName;
+        return getDisplayName();
     }
 }
+
